@@ -1,4 +1,4 @@
-name: Build Fabric Mod
+name: Build Sword Assist Mod
 
 on:
   push:
@@ -19,13 +19,15 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Prepare Fabric project structure
+      - name: Prepare Fabric project files
         run: |
           mkdir -p src/main/java/com/swordassist
           mkdir -p src/main/resources
+
           if [ -f "SwordAssistClient.java" ]; then
             mv SwordAssistClient.java src/main/java/com/swordassist/SwordAssistClient.java
           fi
+
           cat << 'EOF' > src/main/resources/fabric.mod.json
           {
             "schemaVersion": 1,
@@ -50,7 +52,86 @@ jobs:
           }
           EOF
 
-      - name: Check build.gradle if present
+          cat << 'EOF' > gradle.properties
+          org.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8
+          org.gradle.parallel=true
+          mod_version=1.0.0
+          maven_group=com.swordassist
+          archives_base_name=sword-assist
+          minecraft_version=26.2
+          loader_version=0.19.3
+          fabric_api_version=0.141.0+26.2
+          EOF
+
+          cat << 'EOF' > settings.gradle
+          pluginManagement {
+            repositories {
+              maven {
+                name = 'Fabric'
+                url = 'https://maven.fabricmc.net/'
+              }
+              gradlePluginPortal()
+            }
+          }
+          rootProject.name = 'sword-assist'
+          EOF
+
+          cat << 'EOF' > build.gradle
+          plugins {
+            id 'fabric-loom' version '1.14-SNAPSHOT'
+            id 'maven-publish'
+          }
+
+          version = project.mod_version
+          group = project.maven_group
+
+          base {
+            archivesName = project.archives_base_name
+          }
+
+          repositories {
+            maven {
+              name = 'Fabric'
+              url = 'https://maven.fabricmc.net/'
+            }
+          }
+
+          dependencies {
+            minecraft "com.mojang:minecraft:${project.minecraft_version}"
+            mappings loom.officialMojangMappings()
+            modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+            modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+          }
+
+          tasks.withType(JavaCompile).configureEach {
+            it.options.release = 21
+          }
+
+          java {
+            withSourcesJar()
+            sourceCompatibility = JavaVersion.VERSION_21
+            targetCompatibility = JavaVersion.VERSION_21
+          }
+
+          jar {
+            from("LICENSE") {
+              rename { "${it}_${project.base.archivesName.get()}" }
+            }
+          }
+          EOF
+
+      - name: Setup Gradle Wrapper if missing
         run: |
-          ls -la
-          
+          if [ ! -f "gradlew" ]; then
+            gradle wrapper --gradle-version 8.14 --distribution-type bin
+          fi
+          chmod +x gradlew
+
+      - name: Build mod jar
+        run: ./gradlew build
+
+      - name: Upload built mod JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: sword-assist-mod
+          path: build/libs/*.jar
