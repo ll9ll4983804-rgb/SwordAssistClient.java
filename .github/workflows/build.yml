@@ -70,6 +70,7 @@ jobs:
                 name = 'Fabric'
                 url = 'https://maven.fabricmc.net/'
               }
+              mavenCentral()
               gradlePluginPortal()
             }
           }
@@ -94,12 +95,18 @@ jobs:
               name = 'Fabric'
               url = 'https://maven.fabricmc.net/'
             }
+            maven {
+              name = 'Mojang'
+              url = 'https://libraries.minecraft.net/'
+            }
             mavenCentral()
           }
 
           dependencies {
             minecraft "com.mojang:minecraft:${project.minecraft_version}"
-            mappings loom.officialMojangMappings()
+            mappings loom.layered {
+              officialMojangMappings()
+            }
             modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
             modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
           }
@@ -123,7 +130,7 @@ jobs:
           chmod +x gradlew
 
       - name: Build mod jar
-        run: ./gradlew build --stacktrace
+        run: ./gradlew build
 
       - name: Upload built mod JAR
         uses: actions/upload-artifact@v4
