@@ -94,6 +94,7 @@ jobs:
               name = 'Fabric'
               url = 'https://maven.fabricmc.net/'
             }
+            mavenCentral()
           }
 
           dependencies {
@@ -112,12 +113,6 @@ jobs:
             sourceCompatibility = JavaVersion.VERSION_25
             targetCompatibility = JavaVersion.VERSION_25
           }
-
-          jar {
-            from("LICENSE") {
-              rename { "${it}_${project.base.archivesName.get()}" }
-            }
-          }
           EOF
 
       - name: Setup Gradle Wrapper if missing
@@ -128,7 +123,7 @@ jobs:
           chmod +x gradlew
 
       - name: Build mod jar
-        run: ./gradlew build
+        run: ./gradlew build --stacktrace
 
       - name: Upload built mod JAR
         uses: actions/upload-artifact@v4
