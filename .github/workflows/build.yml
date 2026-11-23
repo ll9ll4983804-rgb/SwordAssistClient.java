@@ -1,0 +1,56 @@
+name: Build Fabric Mod
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Prepare Fabric project structure
+        run: |
+          mkdir -p src/main/java/com/swordassist
+          mkdir -p src/main/resources
+          if [ -f "SwordAssistClient.java" ]; then
+            mv SwordAssistClient.java src/main/java/com/swordassist/SwordAssistClient.java
+          fi
+          cat << 'EOF' > src/main/resources/fabric.mod.json
+          {
+            "schemaVersion": 1,
+            "id": "swordassist",
+            "version": "1.0.0",
+            "name": "Sword Assist",
+            "description": "Sword PvP assist client mod for Fabric",
+            "authors": ["Ayman"],
+            "license": "MIT",
+            "environment": "client",
+            "entrypoints": {
+              "client": [
+                "com.swordassist.SwordAssistClient"
+              ]
+            },
+            "depends": {
+              "fabricloader": ">=0.19.3",
+              "minecraft": ">=26.2",
+              "java": ">=21",
+              "fabric-api": "*"
+            }
+          }
+          EOF
+
+      - name: Check build.gradle if present
+        run: |
+          ls -la
+          
